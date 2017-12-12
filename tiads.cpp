@@ -1,9 +1,7 @@
 #include "tiads.h"
 
 
-TiADS::TiADS(){
-    SPI.
-}
+TiADS::TiADS(){}
 TiADS::~TiADS(){}
 
 
@@ -21,8 +19,7 @@ char TiADS::readRegister(REGS reg){
     digitalWrite(cs, HIGH);
     SPI.endTransaction();
 
-
-    return 0xFF;
+    return ret;
 }
 
 void TiADS::writeRegister(char data, char addr){
