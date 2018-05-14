@@ -7,42 +7,46 @@
 class TiADS
 {
 public:
-    TiADS();
+
+    TiADS(int cs, int drdy, void(*ifxn)() );
     ~TiADS();
-    void setCS(int cs);
-
-    //SPI Command interface
-    char readRegister(char addr);
-    void writeRegister(char data, char addr);
     
-    //SPI Commands
+    //SPI Commands and addresses
     enum CMDS{
-        WAKEUP  = 0x02;
-        STANDBY = 0x04;
-        RESET   = 0x06;
-        START   = 0x08;
-        STOP    = 0x0A;
+        WAKEUP  = 0x02,
+        STANDBY = 0x04,
+        RESET   = 0x06,
+        START   = 0x08,
+        STOP    = 0x0A,
 
-        RDATAC  = 0x10;
-        SDATAC  = 0x11;
-        RDATA   = 0x12;
-        RREG    = 0x2000;
-        WREG    = 0x4000;
+        RDATAC  = 0x10,
+        SDATAC  = 0x11,
+        RDATA   = 0x12,
+        RREG    = 0x20,
+        WREG    = 0x40
     };
-    enum REGS // High byte is register, low byte is mask
+    enum REGS{
+        ID      = 0x00,
+        CONFIG1 = 0x01,
+        CONFIG2 = 0x02,
+        CONFIG3 = 0x03,
+        FAULT   = 0x04
+
+    };
+    enum FLAG // High byte is register, low byte is bit number
     {
-        CLK_EN     = 0x0120,
-        INT_TEST   = 0x0210,
-        TEST_AMP   = 0x0204,
-        TEST_FREQ1 = 0x0202,
-        TEST_FREQ0 = 0x0201,
-        PD_REFBUF  = 0x0380,
-        VREF_4V    = 0x0320,
-        OPAMP_REF  = 0x0308,
-        PD_OPAMP   = 0x0304,
-        COMP_TH2   = 0x0480,
-        COMP_TH1   = 0x0440,
-        COMP_TH0   = 0x0420,
+        CLK_EN     = 0x0105,
+        INT_TEST   = 0x0204,
+        TEST_AMP   = 0x0202,
+        TEST_FREQ1 = 0x0201,
+        TEST_FREQ0 = 0x0200,
+        PD_REFBUF  = 0x0307,
+        VREF_4V    = 0x0305,
+        OPAMP_REF  = 0x0303,
+        PD_OPAMP   = 0x0302,
+        COMP_TH2   = 0x0407,
+        COMP_TH1   = 0x0406,
+        COMP_TH0   = 0x0405,
         CH1SET     = 0x0500,
         CH2SET     = 0x0600,
         CH3SET     = 0x0700,
@@ -59,32 +63,52 @@ public:
         MUX   = 0x0007
     };
 
-    bool readFlag(REGS f);
-    void writeFlag(REGS f, bool v);
+//SPI Commands
+
+    void readRegister(byte addr, byte *result);
+    void writeRegister(byte addr, byte data);
+
+    bool readFlag(TiADS::FLAG f);
+    void writeFlag(TiADS::FLAG f, bool v);
+
+//State
+
+    void standby();
+    void wakeup();
+    void reset();
+    
+    void startup();
+    void readInterrupt();
+
+//Conversion
+
+    void startContinuousConversion();
+    void stopContinuousConversion();
+
+    void readData();
+
+    int channelResult( int i );
+
+    void waitConversion();
 
 private:
+
     int csPin;
+    int drdyPin;
+    
+    void startTrans();
+    void endTrans();
+
+    int chResult[8];
+    volatile byte statusResult[3];
+    
+    bool conversion_running;
+    void (*interrupt_fxn)();
+
+    void resultReadback();
+
+    volatile bool convwaiting;
 };
 
+
 #endif
-
-
-/*
-To set bits high: OR with mask bit
-ex:
-  0101010 |
-  0000100 =>
-  0101110
-
-
-*/
-
-
-// 1000 0000 = 0x80   BIT 7
-// 0100 0000 = 0x40   BIT 6
-// 0010 0000 = 0x20   BIT 5
-// 0001 0000 = 0x10   BIT 4
-// 0000 1000 = 0x08   BIT 3
-// 0000 0100 = 0x04   BIT 2
-// 0000 0010 = 0x02   BIT 1
-// 0000 0001 = 0x01   BIT 0
